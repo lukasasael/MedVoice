@@ -33,6 +33,26 @@ test_cases = [
         "id": "caso_invalido",
         "text": "preparar café expresso",
         "expected_intent": "desconhecido"
+    },
+    {
+        "id": "BR408_1",
+        "text": "reduzir o fluxo de oxigênio por favor",
+        "expected_intent": "ajustar_parametro"
+    },
+    {
+        "id": "BR408_2",
+        "text": "apagar as luzes da sala de cirurgia",
+        "expected_intent": "desconhecido"
+    },
+    {
+        "id": "BR408_3",
+        "text": "bota aquilo ali no vinte",
+        "expected_intent": "ajustar_parametro"
+    },
+    {
+        "id": "BR408_4",
+        "text": "ajusta a pressão p'ra doze",
+        "expected_intent": "ajustar_parametro"
     }
 ]
 
