@@ -63,6 +63,38 @@ Para comprovar a robustez do sistema no mundo real — validando como o modelo l
 
 ---
 
+## 🧠 Análise do Domínio e Estratégia (Item 5.1)
+
+### Artefatos e Justificativa
+Os artefatos deste protótipo (`schema.py`, `dataset_builder.py`, e `reference.json`) foram desenhados para representar o fluxo mínimo viável de uma sala cirúrgica ou UTI. 
+- **Schema Pydantic:** Escolhido por forçar tipagem forte (Enums) e permitir a geração automática do `JSON Schema` lido pelo LLM (Structured Outputs).
+- **Catálogo de Comandos e Casos de Borda:** Selecionamos intencionalmente falas incompletas, ambíguas e fora de escopo para validar o comportamento defensivo do equipamento (evitar falsos positivos perigosos).
+
+### Dificuldades do Domínio
+- **Ambiguidades:** Uso de pronomes ("aumenta *aquilo*") ou omissão do parâmetro base ("bota no 20").
+- **Variações de Escrita e Unidades:** Como "p'ra", "pra", "para", e unidades foneticamente complexas de transcrever.
+
+### Estratégia Adotada
+Optamos por uma arquitetura em dois estágios:
+1. **STT Local (Whisper Base):** Rápido, roda sem internet (crucial para hospitais), mas suscetível a erros fonéticos.
+2. **LLM Rápido via API (Llama 3.1 8b):** Baixa latência, encarregado de inferir a semântica do texto "sujo" gerado pelo STT.
+
+---
+
+## 🔍 Análise de Erros de STT e Mitigações (Item 5.6)
+
+Durante os testes com os áudios reais gravados, observamos padrões de falha no módulo STT (Whisper):
+
+1. **Erros mais frequentes:** 
+   - Confusão fonética em unidades de medida: "hertz" foi transcrito como "rertz", "hzs", ou "heats".
+   - Alucinação de pontuação ou junção de palavras velozes ("p'radoze").
+2. **Impacto na Extração:**
+   - Uma abordagem puramente baseada em LLM (Variante A) pode falhar ao tentar encaixar um valor bizarro ("rertz") no JSON final, gerando alucinações secundárias ou rejeitando a extração.
+3. **Mitigações Adotadas (Variante B Híbrida):**
+   - Implementamos no `llm_extractor.py` uma camada de **Normalização Lexical (Pós-processamento)**. A regra mapeia variações bizarras conhecidas ("rertz", "heats") para o padrão oficial ("Hz").
+   - **Validação Semântica de Apoio:** Regras garantem que comandos com intenção de ajuste, mas sem valor numérico extraído, sejam forçados para o status `INCOMPLETO`, sobrepondo falhas de julgamento do LLM puro.
+
+---
 ## 📝 Nota para o Avaliador Técnico
 
 Caro instrutor/avaliador,
