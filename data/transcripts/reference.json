@@ -1,0 +1,27 @@
+[
+  {
+    "id": "caso_valido_simples",
+    "text": "ajustar a frequência para cinco hertz",
+    "expected_intent": "ajustar_parametro"
+  },
+  {
+    "id": "caso_unidade_omitida",
+    "text": "coloca a temperatura em trinta e seis",
+    "expected_intent": "ajustar_parametro"
+  },
+  {
+    "id": "caso_ambiguo",
+    "text": "aumenta aquilo lá para dez",
+    "expected_intent": "ajustar_parametro"
+  },
+  {
+    "id": "caso_incompleto",
+    "text": "ajustar a pressão para",
+    "expected_intent": "ajustar_parametro"
+  },
+  {
+    "id": "caso_invalido",
+    "text": "preparar café expresso",
+    "expected_intent": "desconhecido"
+  }
+]
