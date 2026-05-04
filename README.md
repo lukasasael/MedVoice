@@ -347,7 +347,23 @@ open frontend/index.html
 
 ---
 
+## 🚀 Metodologia de Desenvolvimento: Context-Driven AI
+
+Este projeto foi construído utilizando uma abordagem de **Desenvolvimento Aumentado por IA**, aplicando a estratégia de **Karpathy Wiki** em conjunto com o **Obsidian** e o agente **Antigravity**.
+
+### Como funciona?
+Diferente do desenvolvimento tradicional com LLMs, onde o contexto é volátil, aqui mantemos uma base de conhecimento estruturada (`/wiki`) que serve como a "memória central" do projeto:
+
+- **Wiki como Codebase de Conhecimento:** Cada decisão arquitetural, conceito médico e entidade do domínio foi documentada e sumarizada pelo agente Antigravity em arquivos Markdown estruturados.
+- **Otimização de Contexto:** Esta estrutura permite que agentes de IA operem com **alta densidade de sinal e baixo ruído**, consultando apenas os conceitos relevantes em vez de processar todo o histórico de logs. Isso otimiza o uso de tokens e garante precisão nas implementações.
+- **Obsidian como IDE de Contexto:** O Obsidian foi utilizado como a interface para visualizar e validar as conexões entre os requisitos técnicos e a implementação, garantindo que o agente estivesse sempre alinhado com as premissas de segurança e escopo do desafio.
+
+> **Resultado:** Um pipeline de desenvolvimento mais rápido, rastreável e com menor alucinação, onde a documentação e o código evoluem em simbiose.
+
+---
+
 ## 📝 Nota para o Avaliador Técnico
+
 
 Caro instrutor/avaliador,
 
