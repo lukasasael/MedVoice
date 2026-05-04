@@ -104,7 +104,28 @@ Além do pipeline em linha de comando, o projeto inclui uma interface web comple
 ```
 api/        ← Servidor FastAPI (backend)
 frontend/   ← Interface web com gravador de voz
+docs/       ← Screenshots da interface
 ```
+
+### Screenshots da Interface
+
+**Estado inicial — API online detectada automaticamente**
+![Interface inicial do MedVoice](docs/screenshots/01_initial.png)
+
+**Resultado OK — Comando reconhecido com sucesso**
+> Fala: *"ajusta a frequência para dez hertz"* → intenção, parâmetro, valor e unidade extraídos corretamente. Badge verde `OK` e aviso de confirmação (ação destrutiva).
+
+![Resultado OK](docs/screenshots/02_result_ok.png)
+
+**Resultado INCOMPLETO — Parâmetro identificado, valor ausente**
+> Fala: *"reduzir o fluxo de oxigênio por favor"* → Whisper transcreveu corretamente, LLM identificou o parâmetro mas sinalizou que o valor alvo está faltando.
+
+![Resultado INCOMPLETO](docs/screenshots/03_result_incompleto.png)
+
+**Histórico da sessão — múltiplos comandos listados**
+> O frontend mantém os últimos 5 comandos da sessão, clicáveis para revisão.
+
+![Histórico da sessão](docs/screenshots/04_history.png)
 
 ### Como rodar a demo
 
@@ -122,11 +143,13 @@ uvicorn api.app:app --reload --port 8000
 **3. Abrir o frontend:**
 ```bash
 open frontend/index.html
-# ou sirva via HTTP:
+# ou sirva via HTTP local:
 python -m http.server 5500 --directory frontend/
 ```
 
-O frontend verifica automaticamente se a API está online, grava o áudio do microfone, envia para transcrição via Whisper e exibe o JSON estruturado extraído pelo LLM em tempo real.
+> **Nota:** O Whisper roda inteiramente **local**, sem chamadas externas de STT.
+> Apenas a extração de entidades usa a API Groq (LLM). Isso é intencional —
+> ambientes hospitalares frequentemente não possuem acesso irrestrito à internet.
 
 ---
 ## 📝 Nota para o Avaliador Técnico
