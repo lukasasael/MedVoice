@@ -4,19 +4,19 @@ MedVoice API — FastAPI backend que expõe o pipeline STT + LLM via HTTP.
 
 import os
 import sys
-import uuid
 import tempfile
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Garante que src/ seja encontrado ao rodar de qualquer diretório
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.stt_module import STTModule
 from src.llm_extractor import LLMExtractor
+from src.stt_module import STTModule
 
 # ---------------------------------------------------------------------------
 # Estado global (modelos carregados uma única vez)
@@ -96,9 +96,7 @@ async def processar_audio(file: UploadFile = File(...)):
             detail=f"Formato '{extension}' não suportado. Use: {', '.join(allowed)}",
         )
 
-    tmp_path = os.path.join(
-        tempfile.gettempdir(), f"medvoice_{uuid.uuid4().hex}{extension}"
-    )
+    tmp_path = os.path.join(tempfile.gettempdir(), f"medvoice_{uuid.uuid4().hex}{extension}")
     try:
         content = await file.read()
         with open(tmp_path, "wb") as f:
@@ -135,4 +133,5 @@ async def processar_audio(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("api.app:app", host="0.0.0.0", port=8000, reload=True)

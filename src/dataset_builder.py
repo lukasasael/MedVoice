@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 from gtts import gTTS
 
 AUDIO_DIR = "data/audio"
@@ -12,66 +13,56 @@ test_cases = [
     {
         "id": "caso_valido_simples",
         "text": "ajustar a frequência para cinco hertz",
-        "expected_intent": "ajustar_parametro"
+        "expected_intent": "ajustar_parametro",
     },
     {
         "id": "caso_unidade_omitida",
         "text": "coloca a temperatura em trinta e seis",
-        "expected_intent": "ajustar_parametro"
+        "expected_intent": "ajustar_parametro",
     },
     {
         "id": "caso_ambiguo",
         "text": "aumenta aquilo lá para dez",
-        "expected_intent": "ajustar_parametro"
+        "expected_intent": "ajustar_parametro",
     },
     {
         "id": "caso_incompleto",
         "text": "ajustar a pressão para",
-        "expected_intent": "ajustar_parametro"
+        "expected_intent": "ajustar_parametro",
     },
-    {
-        "id": "caso_invalido",
-        "text": "preparar café expresso",
-        "expected_intent": "desconhecido"
-    },
+    {"id": "caso_invalido", "text": "preparar café expresso", "expected_intent": "desconhecido"},
     {
         "id": "BR408_1",
         "text": "reduzir o fluxo de oxigênio por favor",
-        "expected_intent": "ajustar_parametro"
+        "expected_intent": "ajustar_parametro",
     },
     {
         "id": "BR408_2",
         "text": "apagar as luzes da sala de cirurgia",
-        "expected_intent": "desconhecido"
+        "expected_intent": "desconhecido",
     },
-    {
-        "id": "BR408_3",
-        "text": "bota aquilo ali no vinte",
-        "expected_intent": "ajustar_parametro"
-    },
-    {
-        "id": "BR408_4",
-        "text": "ajusta a pressão p'ra doze",
-        "expected_intent": "ajustar_parametro"
-    }
+    {"id": "BR408_3", "text": "bota aquilo ali no vinte", "expected_intent": "ajustar_parametro"},
+    {"id": "BR408_4", "text": "ajusta a pressão p'ra doze", "expected_intent": "ajustar_parametro"},
 ]
+
 
 def generate_audio():
     print("Gerando áudios sintéticos...")
     for case in test_cases:
         filepath = os.path.join(AUDIO_DIR, f"{case['id']}.mp3")
         if not os.path.exists(filepath):
-            tts = gTTS(text=case['text'], lang='pt')
+            tts = gTTS(text=case["text"], lang="pt")
             tts.save(filepath)
             print(f"Gerado: {filepath}")
         else:
             print(f"Já existe: {filepath}")
-    
+
     # Save the reference map
     ref_path = os.path.join(TRANSCRIPT_DIR, "reference.json")
     with open(ref_path, "w", encoding="utf-8") as f:
         json.dump(test_cases, f, ensure_ascii=False, indent=2)
     print("Dataset de referência salvo.")
+
 
 if __name__ == "__main__":
     generate_audio()
