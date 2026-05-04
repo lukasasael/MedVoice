@@ -158,6 +158,8 @@ Caro instrutor/avaliador,
 
 O projeto está configurado para exibir com transparência as capacidades (e as limitações) do uso de LLMs para extração de dados médicos estruturados.
 
-Ao rodar `python src/evaluate.py`, o console mostrará o gabarito (Ref), a saída literal do Whisper (STT) e a interpretação estruturada final (Extração). 
+Ao rodar `python src/evaluate.py`, o console mostrará o gabarito (Ref), a saída literal do Whisper (STT) e a interpretação estruturada final (Extração).
 
 Recomendamos atenção especial aos casos de teste iniciados por `BR408_` (os áudios gravados). Eles demonstram situações onde as regras determinísticas clássicas falhariam, mas a combinação Whisper + Llama consegue, na maioria das vezes, inferir a semântica correta ou, pelo menos, acusar que a intenção é desconhecida ou que os parâmetros estão incompletos, garantindo a segurança do equipamento.
+
+Por fim, sinta-se à vontade para ir além dos testes automatizados: a interface web (`frontend/index.html`) foi construída exatamente para isso. Após subir a API com `uvicorn api.app:app --port 8000` e abrir o arquivo no browser, você pode **gravar sua própria voz** com qualquer comando relacionado a equipamentos médicos — ajustar frequência, temperatura, pressão, fluxo — e observar em tempo real como o pipeline transcreve, interpreta e classifica o que foi dito. Experimente também comandos ambíguos, incompletos ou fora de escopo para ver o comportamento defensivo do sistema em ação.
