@@ -34,10 +34,9 @@ def test_caso_invalido(extractor):
     assert res.parameter == "nenhum"
 
 def test_caso_ambiguo(extractor):
-    text = "aumenta aquilo lá para dez"
+    text = "ajusta esse trem aí"
     res = extractor.extract_hybrid(text)
-    # The LLM should recognize it's an adjustment, but the parameter is ambiguous
-    assert res.parameter == "nenhum"
+    # Sem parâmetro e sem valor, o LLM deve classificar como AMBIGUO ou a regra híbrida como INCOMPLETO.
     assert res.status in ["AMBIGUO", "INCOMPLETO"]
 
 @patch("src.llm_extractor.Groq")

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MedVoice — Interface de comandos de voz para equipamentos médicos com transcrição automática e extração de intenções via IA." />
+  <title>MedVoice — Controle por Voz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #080d14;
+      --surface:    #0e1623;
+      --surface2:   #162032;
+      --border:     rgba(0,200,220,0.15);
+      --accent:     #00c8dc;
+      --accent2:    #0070f3;
+      --text:       #e8f0fe;
+      --muted:      #6b7fa3;
+      --ok:         #22c55e;
+      --warn:       #f59e0b;
+      --incomplete: #f97316;
+      --invalid:    #ef4444;
+      --ambiguous:  #a855f7;
+      --radius:     14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .logo svg { width: 36px; height: 36px; }
+    .logo-text { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+
+    #api-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.9rem;
+      border-radius: 99px;
+    }
+    #status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.4s;
+    }
+    #status-dot.online  { background: var(--ok);   box-shadow: 0 0 8px var(--ok); }
+    #status-dot.offline { background: var(--invalid); }
+
+    /* ── Main card ── */
+    main {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+    }
+
+    /* ── Record area ── */
+    .record-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 2.5rem 2rem;
+    }
+
+    /* Waveform visualizer */
+    #waveform-canvas {
+      width: 100%;
+      max-width: 500px;
+      height: 64px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    #waveform-canvas.visible { opacity: 1; }
+
+    /* Record button */
+    #btn-record {
+      position: relative;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      box-shadow: 0 0 0 0 rgba(0,200,220,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-record:hover { transform: scale(1.06); }
+    #btn-record:active { transform: scale(0.96); }
+    #btn-record.recording {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      animation: pulse-ring 1.4s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0   rgba(239,68,68,0.6); }
+      70%  { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0   rgba(239,68,68,0); }
+    }
+    #btn-record svg { width: 34px; height: 34px; fill: #fff; }
+
+    #record-label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      transition: color 0.3s;
+    }
+    #record-label.recording { color: #ef4444; }
+
+    /* Timer */
+    #timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+    #timer.active { color: var(--accent); }
+
+    /* ── Processing overlay ── */
+    #processing-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 0 0.5rem;
+    }
+    #processing-overlay.visible { display: flex; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #processing-overlay p { color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Result panel ── */
+    #result-panel { display: none; }
+    #result-panel.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .result-header h2 { font-size: 1rem; font-weight: 600; }
+
+    .status-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 99px;
+    }
+    .badge-ok         { background: rgba(34,197,94,0.15);  color: var(--ok); }
+    .badge-ambiguo    { background: rgba(168,85,247,0.15); color: var(--ambiguous); }
+    .badge-incompleto { background: rgba(249,115,22,0.15); color: var(--incomplete); }
+    .badge-invalido   { background: rgba(239,68,68,0.15);  color: var(--invalid); }
+
+    /* Transcription box */
+    .transcription-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.25rem;
+    }
+    .transcription-box label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    #transcription-text {
+      font-size: 1rem;
+      color: var(--text);
+      font-style: italic;
+    }
+
+    /* Extracted fields grid */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+    .field-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+    }
+    .field-card .field-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .field-card .field-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      word-break: break-word;
+    }
+    .field-card .field-value.null-val { color: var(--muted); font-style: italic; font-weight: 400; }
+
+    /* JSON raw */
+    details { margin-top: 0.5rem; }
+    summary {
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 0.4rem 0;
+      user-select: none;
+    }
+    summary:hover { color: var(--accent); }
+    pre#raw-json {
+      margin-top: 0.75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #7dd3fc;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    /* ── History ── */
+    #history-section { display: none; }
+    #history-section.visible { display: block; }
+    #history-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .history-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .history-item:hover { border-color: var(--accent); }
+    .history-item .hi-text { font-size: 0.85rem; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-item .hi-badge { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 99px; }
+
+    /* ── Validation errors ── */
+    #validation-errors { margin-top: 0.85rem; }
+    .error-item {
+      background: rgba(239,68,68,0.08);
+      border-left: 3px solid var(--invalid);
+      padding: 0.5rem 0.75rem;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.82rem;
+      color: #fca5a5;
+      margin-bottom: 0.4rem;
+    }
+
+    /* ── Requires confirmation warning ── */
+    #confirmation-warning {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--warn);
+    }
+    #confirmation-warning.visible { display: flex; }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="18" cy="18" r="18" fill="url(#grad)"/>
+      <path d="M18 9v18M12 14v8M24 13v10M9 18h18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#0070f3"/>
+          <stop offset="1" stop-color="#00c8dc"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <span class="logo-text">Med<span>Voice</span></span>
+  </div>
+  <div id="api-status">
+    <span id="status-dot"></span>
+    <span id="status-label">Verificando API…</span>
+  </div>
+</header>
+
+<main>
+  <!-- Record Card -->
+  <div class="card record-area">
+    <canvas id="waveform-canvas"></canvas>
+    <button id="btn-record" aria-label="Iniciar gravação">
+      <!-- mic icon -->
+      <svg id="icon-mic" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V6a2 2 0 0 0-2-2zm-7 8h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h3v2H8v-2h3v-2.07A7 7 0 0 1 5 12z"/>
+      </svg>
+      <!-- stop icon (hidden by default) -->
+      <svg id="icon-stop" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <rect x="5" y="5" width="14" height="14" rx="2" fill="#fff"/>
+      </svg>
+    </button>
+    <p id="record-label">Clique para gravar um comando</p>
+    <p id="timer"></p>
+
+    <div id="processing-overlay">
+      <div class="spinner"></div>
+      <p>Transcrevendo e extraindo parâmetros…</p>
+    </div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="card" id="result-panel">
+    <div class="result-header">
+      <h2>Resultado da Extração</h2>
+      <span id="status-badge" class="status-badge"></span>
+    </div>
+
+    <div class="transcription-box">
+      <label>Transcrição (Whisper)</label>
+      <span id="transcription-text"></span>
+    </div>
+
+    <div class="fields-grid" id="fields-grid"></div>
+
+    <div id="validation-errors"></div>
+
+    <div id="confirmation-warning">
+      ⚠️ Este comando requer confirmação antes de ser executado no equipamento.
+    </div>
+
+    <details>
+      <summary>Ver JSON bruto</summary>
+      <pre id="raw-json"></pre>
+    </details>
+  </div>
+
+  <!-- History -->
+  <div class="card" id="history-section">
+    <h3>Histórico da sessão</h3>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</main>
+
+<footer>MedVoice Demo · Pipeline Whisper + Llama 3.1 via Groq</footer>
+
+<script>
+  const API_BASE = 'http://localhost:8000';
+  const MAX_HISTORY = 5;
+
+  const btnRecord        = document.getElementById('btn-record');
+  const iconMic          = document.getElementById('icon-mic');
+  const iconStop         = document.getElementById('icon-stop');
+  const recordLabel      = document.getElementById('record-label');
+  const timerEl          = document.getElementById('timer');
+  const processingOverlay= document.getElementById('processing-overlay');
+  const resultPanel      = document.getElementById('result-panel');
+  const statusBadge      = document.getElementById('status-badge');
+  const transcriptionText= document.getElementById('transcription-text');
+  const fieldsGrid       = document.getElementById('fields-grid');
+  const validationErrors = document.getElementById('validation-errors');
+  const confirmWarning   = document.getElementById('confirmation-warning');
+  const rawJson          = document.getElementById('raw-json');
+  const historySection   = document.getElementById('history-section');
+  const historyList      = document.getElementById('history-list');
+  const waveformCanvas   = document.getElementById('waveform-canvas');
+  const statusDot        = document.getElementById('status-dot');
+  const statusLabelEl    = document.getElementById('status-label');
+
+  let mediaRecorder = null;
+  let audioChunks   = [];
+  let timerInterval = null;
+  let seconds       = 0;
+  let animFrame     = null;
+  let analyser      = null;
+  let sessionHistory= [];
+
+  // ── API Health Check ──────────────────────────────────────────────────────
+  async function checkApiHealth() {
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        statusDot.className = 'online';
+        statusLabelEl.textContent = `API online · Whisper ${data.whisper_model}`;
+        return true;
+      }
+    } catch (_) {}
+    statusDot.className = 'offline';
+    statusLabelEl.textContent = 'API offline — inicie o servidor';
+    return false;
+  }
+
+  // ── Waveform Visualizer ───────────────────────────────────────────────────
+  function startVisualizer(stream) {
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 128;
+    source.connect(analyser);
+    const bufferLen = analyser.frequencyBinCount;
+    const dataArr = new Uint8Array(bufferLen);
+    const canvasCtx = waveformCanvas.getContext('2d');
+    waveformCanvas.classList.add('visible');
+
+    function draw() {
+      animFrame = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArr);
+      const W = waveformCanvas.offsetWidth;
+      const H = waveformCanvas.offsetHeight;
+      waveformCanvas.width = W;
+      waveformCanvas.height = H;
+      canvasCtx.clearRect(0, 0, W, H);
+      const barW = (W / bufferLen) * 2.2;
+      let x = 0;
+      for (let i = 0; i < bufferLen; i++) {
+        const barH = (dataArr[i] / 255) * H;
+        const alpha = 0.5 + (dataArr[i] / 255) * 0.5;
+        canvasCtx.fillStyle = `rgba(0,200,220,${alpha})`;
+        canvasCtx.fillRect(x, H - barH, barW - 1, barH);
+        x += barW;
+      }
+    }
+    draw();
+  }
+
+  function stopVisualizer() {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    waveformCanvas.classList.remove('visible');
+  }
+
+  // ── Timer ─────────────────────────────────────────────────────────────────
+  function startTimer() {
+    seconds = 0;
+    timerEl.className = 'active';
+    timerEl.textContent = '00:00';
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerEl.className = '';
+    timerEl.textContent = '';
+  }
+
+  // ── Recording ─────────────────────────────────────────────────────────────
+  btnRecord.addEventListener('click', async () => {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+      // Check API before recording
+      const online = await checkApiHealth();
+      if (!online) {
+        alert('A API está offline. Inicie o servidor antes de gravar.');
+        return;
+      }
+      await startRecording();
+    } else {
+      stopRecording();
+    }
+  });
+
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMime() });
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => processAudio(stream);
+
+    startVisualizer(stream);
+    startTimer();
+    mediaRecorder.start();
+
+    btnRecord.classList.add('recording');
+    iconMic.style.display = 'none';
+    iconStop.style.display = 'block';
+    recordLabel.textContent = 'Gravando… clique para parar';
+    recordLabel.classList.add('recording');
+  }
+
+  function stopRecording() {
+    mediaRecorder.stop();
+    stopVisualizer();
+    stopTimer();
+    btnRecord.classList.remove('recording');
+    iconMic.style.display = 'block';
+    iconStop.style.display = 'none';
+    recordLabel.textContent = 'Clique para gravar um comando';
+    recordLabel.classList.remove('recording');
+  }
+
+  function getSupportedMime() {
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    return candidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
+  }
+
+  // ── Process Audio ─────────────────────────────────────────────────────────
+  async function processAudio(stream) {
+    stream.getTracks().forEach(t => t.stop());
+
+    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+    const ext = mimeType.includes('ogg') ? '.ogg' : mimeType.includes('mp4') ? '.mp4' : '.webm';
+    const blob = new Blob(audioChunks, { type: mimeType });
+
+    // Show processing state
+    processingOverlay.classList.add('visible');
+    resultPanel.classList.remove('visible');
+
+    const formData = new FormData();
+    formData.append('file', blob, `comando${ext}`);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/processar-audio`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Erro desconhecido' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderResult(data);
+      addToHistory(data);
+    } catch (err) {
+      alert(`Erro ao processar: ${err.message}`);
+    } finally {
+      processingOverlay.classList.remove('visible');
+    }
+  }
+
+  // ── Render Result ─────────────────────────────────────────────────────────
+  function renderResult(data) {
+    const ex = data.extracted_data;
+
+    // Transcription
+    transcriptionText.textContent = `"${data.transcription}"`;
+
+    // Status badge
+    const statusKey = (ex.status || 'ok').toLowerCase();
+    const badgeClass = { ok: 'badge-ok', ambiguo: 'badge-ambiguo', incompleto: 'badge-incompleto', invalido: 'badge-invalido' }[statusKey] || 'badge-ok';
+    statusBadge.className = `status-badge ${badgeClass}`;
+    statusBadge.textContent = ex.status;
+
+    // Fields
+    const fields = [
+      { label: 'Intenção',   value: ex.intent },
+      { label: 'Parâmetro',  value: ex.parameter },
+      { label: 'Valor',      value: ex.value != null ? ex.value : null },
+      { label: 'Unidade',    value: ex.unit },
+    ];
+    fieldsGrid.innerHTML = fields.map(f => `
+      <div class="field-card">
+        <div class="field-label">${f.label}</div>
+        <div class="field-value ${f.value == null ? 'null-val' : ''}">${f.value != null ? f.value : '—'}</div>
+      </div>
+    `).join('');
+
+    // Validation errors
+    validationErrors.innerHTML = (ex.validation_errors || [])
+      .map(e => `<div class="error-item">⚠ ${e}</div>`).join('');
+
+    // Confirmation warning
+    if (ex.requires_confirmation) {
+      confirmWarning.classList.add('visible');
+    } else {
+      confirmWarning.classList.remove('visible');
+    }
+
+    // Raw JSON
+    rawJson.textContent = JSON.stringify(data, null, 2);
+
+    resultPanel.classList.add('visible');
+  }
+
+  // ── Session History ────────────────────────────────────────────────────────
+  function addToHistory(data) {
+    sessionHistory.unshift(data);
+    if (sessionHistory.length > MAX_HISTORY) sessionHistory.pop();
+
+    historyList.innerHTML = sessionHistory.map((item, idx) => {
+      const ex = item.extracted_data;
+      const statusKey = (ex.status || 'ok').toLowerCase();
+      const badgeClass = { ok: 'badge-ok', ambiguo: 'badge-ambiguo', incompleto: 'badge-incompleto', invalido: 'badge-invalido' }[statusKey] || 'badge-ok';
+      return `
+        <div class="history-item" data-idx="${idx}" role="button" tabindex="0" aria-label="Ver resultado ${idx + 1}">
+          <span class="hi-text">${item.transcription}</span>
+          <span class="hi-badge status-badge ${badgeClass}">${ex.status}</span>
+        </div>
+      `;
+    }).join('');
+
+    historyList.querySelectorAll('.history-item').forEach(el => {
+      el.addEventListener('click', () => renderResult(sessionHistory[+el.dataset.idx]));
+    });
+
+    historySection.classList.add('visible');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  checkApiHealth();
+  // Recheck every 15s
+  setInterval(checkApiHealth, 15000);
+</script>
+</body>
+</html>

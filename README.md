@@ -95,6 +95,40 @@ Durante os testes com os áudios reais gravados, observamos padrões de falha no
    - **Validação Semântica de Apoio:** Regras garantem que comandos com intenção de ajuste, mas sem valor numérico extraído, sejam forçados para o status `INCOMPLETO`, sobrepondo falhas de julgamento do LLM puro.
 
 ---
+
+## 🌐 Demo Web (API + Frontend)
+
+Além do pipeline em linha de comando, o projeto inclui uma interface web completa para demonstrar o sistema de forma interativa.
+
+### Estrutura adicionada
+```
+api/        ← Servidor FastAPI (backend)
+frontend/   ← Interface web com gravador de voz
+```
+
+### Como rodar a demo
+
+**1. Instalar dependências da API:**
+```bash
+source .venv/bin/activate
+pip install -e ".[api]"
+```
+
+**2. Iniciar o servidor (na raiz do projeto):**
+```bash
+uvicorn api.app:app --reload --port 8000
+```
+
+**3. Abrir o frontend:**
+```bash
+open frontend/index.html
+# ou sirva via HTTP:
+python -m http.server 5500 --directory frontend/
+```
+
+O frontend verifica automaticamente se a API está online, grava o áudio do microfone, envia para transcrição via Whisper e exibe o JSON estruturado extraído pelo LLM em tempo real.
+
+---
 ## 📝 Nota para o Avaliador Técnico
 
 Caro instrutor/avaliador,

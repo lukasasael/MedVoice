@@ -13,3 +13,7 @@ Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: jupyter>=1.0.0; extra == "dev"
 Requires-Dist: black>=24.0.0; extra == "dev"
+Provides-Extra: api
+Requires-Dist: fastapi>=0.110.0; extra == "api"
+Requires-Dist: uvicorn>=0.29.0; extra == "api"
+Requires-Dist: python-multipart>=0.0.9; extra == "api"

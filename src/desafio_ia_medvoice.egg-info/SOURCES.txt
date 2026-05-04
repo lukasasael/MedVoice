@@ -1,9 +1,14 @@
 README.md
 pyproject.toml
+src/__init__.py
 src/dataset_builder.py
+src/evaluate.py
+src/llm_extractor.py
 src/schema.py
+src/stt_module.py
 src/desafio_ia_medvoice.egg-info/PKG-INFO
 src/desafio_ia_medvoice.egg-info/SOURCES.txt
 src/desafio_ia_medvoice.egg-info/dependency_links.txt
 src/desafio_ia_medvoice.egg-info/requires.txt
 src/desafio_ia_medvoice.egg-info/top_level.txt
+tests/test_pipeline.py
